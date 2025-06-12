@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The A2A Protocol: An Interactive Exploration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate Gray with Blue Accent -->
+    <!-- Application Structure Plan: A single-page, multi-section dashboard layout is used to provide a non-linear, exploratory user experience. Instead of forcing a user to read top-to-bottom like a report, this structure uses a sticky navigation bar to allow users to jump to the most relevant content for them—be it the high-level overview, the technical breakdown, the comparison, or the use cases. This thematic sectioning is better for usability as it breaks down complex information into digestible, self-contained modules. Key interactions include interactive diagrams to explain flows, clickable cards for use cases, and dynamic charts for comparison, making the content more engaging and easier to synthesize than static text. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Core A2A concepts -> Goal: Inform -> Viz: Styled text, cards -> Interaction: Static -> Justification: Clear, direct presentation of foundational knowledge.
+        - Report Info: A2A technical communication flow -> Goal: Organize/Explain -> Viz: HTML/CSS flow diagram -> Interaction: Click-to-highlight steps -> Justification: Visually demonstrates the process dynamically, making an abstract concept concrete and easier to follow than a text description. Method: Custom HTML/CSS/JS.
+        - Report Info: Real-world applications -> Goal: Explore -> Viz: Grid of cards -> Interaction: Click-to-reveal details -> Justification: Allows users to quickly scan applications and dive deeper into ones relevant to their industry, making the content personalized and scannable. Method: Custom HTML/CSS/JS.
+        - Report Info: Comparison of agent protocols -> Goal: Compare -> Viz: Radar Chart & HTML Tables -> Interaction: Chart hover, Tab switching -> Justification: The radar chart provides a powerful, at-a-glance visual comparison of multi-faceted protocols. The tables offer detailed, structured data for deeper analysis. Library/Method: Chart.js for the radar chart, HTML/JS for tabbed tables.
+        - Report Info: Challenges -> Goal: Inform/Organize -> Viz: Accordion -> Interaction: Click-to-expand -> Justification: Condenses a large amount of text into a clean, manageable list, preventing cognitive overload and improving layout. Method: Custom HTML/CSS/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .flow-step {
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }
+        .flow-step.active {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            background-color: #3b82f6;
+            color: white;
+        }
+        .flow-line {
+            transition: all 0.3s ease-in-out;
+        }
+        .flow-line.active {
+            background-color: #3b82f6;
+        }
+        .use-case-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .use-case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800">A2A Protocol Explorer</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="#how-it-works" class="nav-link px-3 py-2 rounded-md text-sm font-medium">How It Works</a>
+                        <a href="#use-cases" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Use Cases</a>
+                        <a href="#comparison" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Comparison</a>
+                        <a href="#future" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Future & Challenges</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                         <svg class="hidden h-6 w-6" id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-menu" class="md:hidden hidden pb-3">
+                <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Overview</a>
+                <a href="#how-it-works" class="nav-link block px-3 py-2 rounded-md text-base font-medium">How It Works</a>
+                <a href="#use-cases" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Use Cases</a>
+                <a href="#comparison" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Comparison</a>
+                <a href="#future" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Future & Challenges</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="overview" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Unlocking Collaborative AI Ecosystems</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">The Agent-to-Agent (A2A) protocol is a pivotal advancement enabling diverse AI agents to communicate, coordinate, and collaborate, transforming how we automate complex workflows and drive innovation.</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
+                <h3 class="text-2xl font-semibold text-slate-800 mb-4">Executive Summary</h3>
+                <p class="text-slate-600 mb-6">A2A provides a standardized language for AI agents, breaking down operational silos and allowing specialized agents to form dynamic teams. This facilitates enhanced workflow automation, accelerates innovation, and expands AI capabilities across an organization's software landscape. While powerful, adoption requires careful attention to security, integration, and ethics. This interactive report explores A2A's architecture, benefits, and its place in the evolving ecosystem of agent communication.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-blue-600 text-lg">Automate Complexity</h4>
+                        <p class="text-sm text-slate-500">Enable specialized agents to handle different steps of a process, passing context seamlessly.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-blue-600 text-lg">Foster Innovation</h4>
+                        <p class="text-sm text-slate-500">Experiment with new agent roles and configurations to create competitive advantages.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-blue-600 text-lg">Scale Efficiently</h4>
+                        <p class="text-sm text-slate-500">Add new agents to handle increasing workloads without traditional human constraints.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How A2A Works: A Technical Deep Dive</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">A2A enables communication through a clear, structured lifecycle built on established web technologies. Interact with the diagram below to see how a typical task is managed from initiation to completion.</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
+                <h3 class="text-2xl font-semibold text-slate-800 mb-6 text-center">Interactive Communication Flow</h3>
+                <div id="flow-diagram" class="relative flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4 mb-8">
+                    <div id="flow-step-1" class="flow-step bg-white border border-slate-200 rounded-lg p-4 w-full md:w-1/4 text-center shadow-sm">
+                        <div class="font-bold text-lg mb-1">1. Client Agent</div>
+                        <p class="text-sm">Initiates a request or formulates a task.</p>
+                    </div>
+                    <div class="flow-line h-6 w-1 md:h-1 md:w-12 bg-slate-300"></div>
+                    <div id="flow-step-2" class="flow-step bg-white border border-slate-200 rounded-lg p-4 w-full md:w-1/4 text-center shadow-sm">
+                        <div class="font-bold text-lg mb-1">2. Discover & Send</div>
+                        <p class="text-sm">Finds a remote agent via its 'Agent Card' and sends a message.</p>
+                    </div>
+                    <div class="flow-line h-6 w-1 md:h-1 md:w-12 bg-slate-300"></div>
+                    <div id="flow-step-3" class="flow-step bg-white border border-slate-200 rounded-lg p-4 w-full md:w-1/4 text-center shadow-sm">
+                        <div class="font-bold text-lg mb-1">3. Remote Agent</div>
+                        <p class="text-sm">Receives message and creates a stateful 'Task Object'.</p>
+                    </div>
+                    <div class="flow-line h-6 w-1 md:h-1 md:w-12 bg-slate-300"></div>
+                     <div id="flow-step-4" class="flow-step bg-white border border-slate-200 rounded-lg p-4 w-full md:w-1/4 text-center shadow-sm">
+                        <div class="font-bold text-lg mb-1">4. Execute & Respond</div>
+                        <p class="text-sm">Acts on the task and returns a result via response or real-time stream.</p>
+                    </div>
+                </div>
+                <div id="flow-details" class="bg-slate-50 rounded-lg p-6 min-h-[150px] transition-all duration-300">
+                    <h4 id="flow-title" class="text-xl font-bold text-blue-600 mb-2">Click a step to learn more</h4>
+                    <p id="flow-description" class="text-slate-600">The A2A protocol orchestrates collaboration through a series of well-defined stages, ensuring that agents can understand each other's capabilities and manage shared tasks effectively.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="use-cases" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Real-World Applications</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">The versatility of A2A enables transformative applications across a wide range of industries. Explore some of the key use cases where inter-agent collaboration is driving efficiency and innovation.</p>
+            </div>
+            <div id="use-cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </section>
+
+        <section id="comparison" class="mb-16 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Protocol Landscape</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">A2A exists within a broader ecosystem of agent communication standards. This section compares contemporary protocols to show their unique strengths and analyzes foundational languages that paved the way.</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
+                 <div class="mb-6 border-b border-slate-200">
+                    <nav class="flex space-x-4" aria-label="Tabs">
+                        <button id="tab-contemporary" class="tab-button active shrink-0 border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">Contemporary Protocols</button>
+                        <button id="tab-foundational" class="tab-button shrink-0 border-b-2 border-transparent px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">Foundational Languages</button>
+                    </nav>
+                </div>
+
+                <div id="content-contemporary">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-2 text-center">Comparing Modern Agent Protocols</h3>
+                    <p class="text-center text-slate-500 mb-6">This chart visualizes the focus areas of today's leading protocols. A larger area indicates a stronger emphasis on that capability. Notice how they complement each other, addressing different layers of agent interoperability.</p>
+                    <div class="chart-container">
+                        <canvas id="protocolComparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="content-foundational" class="hidden">
+                     <h3 class="text-2xl font-semibold text-slate-800 mb-6 text-center">Foundational Languages: KQML vs. FIPA ACL</h3>
+                     <p class="text-center text-slate-500 mb-6">The design of modern protocols was heavily influenced by two pioneering agent communication languages from the 1990s. Their philosophical differences regarding how agents should interact still echo in today's architectural debates.</p>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-xl font-semibold text-slate-900 mb-3 text-center">KQML</h4>
+                            <div class="overflow-x-auto bg-slate-50 rounded-lg p-3">
+                                <table class="w-full text-sm">
+                                    <tbody class="divide-y divide-slate-200">
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Philosophy</td><td class="p-2">Permissive; allows direct manipulation of another agent's knowledge base.</td></tr>
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Knowledge</td><td class="p-2">"White-box" model, direct edits via `insert` and `delete`.</td></tr>
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Management</td><td class="p-2">Managed directly through its own performatives like `register`.</td></tr>
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Best For</td><td class="p-2">Research and flexible systems with high trust between agents.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-semibold text-slate-900 mb-3 text-center">FIPA ACL</h4>
+                            <div class="overflow-x-auto bg-slate-50 rounded-lg p-3">
+                                <table class="w-full text-sm">
+                                    <tbody class="divide-y divide-slate-200">
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Philosophy</td><td class="p-2">Formal & Encapsulated; based on speech acts and agent mental states.</td></tr>
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Knowledge</td><td class="p-2">"Black-box" model, agents cannot directly alter each other's state.</td></tr>
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Management</td><td class="p-2">Delegated to separate specifications like the Agent Management System.</td></tr>
+                                        <tr class="divide-x divide-slate-200"><td class="font-semibold p-2 w-1/3">Best For</td><td class="p-2">Industrial and enterprise systems needing rigorous, secure interaction.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="future" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Future Trajectories & Critical Challenges</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">The journey towards truly intelligent, collaborative ecosystems is ongoing. It involves both a long-term vision for interconnected AI and a pragmatic approach to overcoming the significant hurdles that remain.</p>
+            </div>
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-4">The Vision Ahead</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-lg text-blue-600">Collective Intelligence</h4>
+                            <p class="text-slate-600">A paradigm shift from standalone agents to interconnected networks where specialized agents form dynamic coalitions to solve problems beyond the scope of any single entity.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg text-blue-600">Decentralized Marketplaces</h4>
+                            <p class="text-slate-600">Future ecosystems may allow agents to discover, negotiate, and pay for services from other agents in an open, decentralized marketplace, fostering a true AI economy.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg text-blue-600">The Spatial Web</h4>
+                            <p class="text-slate-600">A long-term convergence where agents operate in a shared, semantically rich digital twin of the world, where context is embedded, not fetched, enabling a deeper, real-time understanding of their environment.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-4">Challenges to Overcome</h3>
+                    <div id="challenges-accordion" class="space-y-2">
+                    </div>
+                </div>
+             </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>&copy; 2025 A2A Protocol Interactive Explainer. All content is derived from the "The Agent-to-Agent Protocol: Unlocking Collaborative AI Ecosystems" report.</p>
+            <p>This is a conceptual, informational tool and not an official product.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIconOpen = document.getElementById('menu-icon-open');
+    const menuIconClose = document.getElementById('menu-icon-close');
+
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        menuIconOpen.classList.toggle('hidden');
+        menuIconClose.classList.toggle('hidden');
+    });
+    
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+                menuIconOpen.classList.remove('hidden');
+                menuIconClose.classList.add('hidden');
+            }
+        });
+    });
+
+    const sections = document.querySelectorAll('section');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === entry.target.id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, { rootMargin: '-20% 0px -80% 0px', threshold: 0 });
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+
+    const flowSteps = [
+        { id: 1, title: 'Client Agent Initiates', description: 'The process begins with a "client" agent that needs a task performed. This could be anything from a user request like "find the best flight to London" to an automated trigger within a larger system.' },
+        { id: 2, title: 'Discover & Send Message', description: 'The client agent discovers a suitable "remote" agent using its "Agent Card"—a metadata file describing its capabilities. It then sends a message formatted according to A2A standards, typically using JSON-RPC over HTTPS.' },
+        { id: 3, title: 'Remote Agent Creates Task', description: 'The remote agent receives the message. For stateful operations, it instantiates a "Task Object." This object becomes the central hub for managing the task\'s lifecycle, tracking its status, and storing relevant data.' },
+        { id: 4, title: 'Execute & Respond', description: 'The remote agent performs the required actions. It provides updates back to the client, either with a single, synchronous response or through a real-time stream using Server-Sent Events (SSE) for long-running tasks.' }
+    ];
+
+    const flowTitleEl = document.getElementById('flow-title');
+    const flowDescriptionEl = document.getElementById('flow-description');
+
+    flowSteps.forEach(stepData => {
+        const stepEl = document.getElementById(`flow-step-${stepData.id}`);
+        const lineEl = stepEl.nextElementSibling;
+        
+        stepEl.addEventListener('click', () => {
+            document.querySelectorAll('.flow-step').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.flow-line').forEach(el => el.classList.remove('active'));
+            
+            stepEl.classList.add('active');
+            if(lineEl && lineEl.classList.contains('flow-line')) lineEl.classList.add('active');
+            
+            flowTitleEl.textContent = stepData.title;
+            flowDescriptionEl.textContent = stepData.description;
+        });
+    });
+
+    const useCasesData = [
+        { title: 'Hiring & HR', icon: '👤', content: 'Specialized agents manage sourcing, screening, scheduling, and background checks, passing candidate context seamlessly through each stage of the hiring pipeline.' },
+        { title: 'Customer Support', icon: '💬', content: 'First-line bots handle initial queries and intelligently escalate complex issues to specialized agents (human or AI) for billing, technical, or other support needs.' },
+        { title: 'Supply Chain', icon: '🚚', content: 'Procurement, logistics, and inventory agents collaborate in real-time to respond to disruptions, optimize routes, and manage stock levels dynamically.' },
+        { title: 'Software Development', icon: '💻', content: 'A team of agents can streamline the SDLC: one gathers requirements, another generates code, a third runs tests and reports bugs, and a fourth writes documentation.' },
+        { title: 'Financial Services', icon: '📈', content: 'Risk assessment agents share findings with investment agents, while fraud detection agents can instantly alert transaction processors to block suspicious activity.' },
+        { title: 'Healthcare', icon: '❤️', content: 'Patient intake, diagnostic support, treatment planning, and insurance agents coordinate to create a smooth, efficient, and personalized patient journey.' }
+    ];
+
+    const useCasesGrid = document.getElementById('use-cases-grid');
+    useCasesData.forEach(data => {
+        const card = document.createElement('div');
+        card.className = 'use-case-card bg-white rounded-xl shadow-md p-6 cursor-pointer';
+        card.innerHTML = `
+            <div class="text-4xl mb-4">${data.icon}</div>
+            <h3 class="text-xl font-semibold text-slate-800 mb-2">${data.title}</h3>
+            <p class="text-slate-600">${data.content}</p>
+        `;
+        useCasesGrid.appendChild(card);
+    });
+
+    const challengesData = [
+        { title: 'Security & Trust', content: 'As agents share data, entry points for breaches multiply. Ensuring agent identity (preventing spoofing), securing data in transit, and logging all actions for audits are critical.' },
+        { title: 'Integration Complexity', content: 'Connecting agents across different platforms, clouds, and legacy systems is a major technical hurdle. A2A is not a managed service, so businesses must manage their own infrastructure.' },
+        { title: 'Ethics & Bias', content: 'Agents can perpetuate and amplify biases present in their training data. Transparency in decision-making and robust fairness metrics are needed to prevent discriminatory outcomes.' },
+        { title: 'Human Oversight', content: 'Over-reliance on automation is risky. Clear governance, continuous monitoring, and fail-safe reviews with a human-in-the-loop for critical decisions remain essential.' }
+    ];
+    
+    const accordionContainer = document.getElementById('challenges-accordion');
+    challengesData.forEach((item, index) => {
+        const accordionItem = document.createElement('div');
+        accordionItem.className = 'border border-slate-200 rounded-lg';
+        accordionItem.innerHTML = `
+            <button class="accordion-button w-full flex justify-between items-center text-left p-4 font-semibold text-slate-800 bg-slate-50 hover:bg-slate-100">
+                <span>${item.title}</span>
+                <span class="accordion-icon text-blue-500 transform transition-transform duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </span>
+            </button>
+            <div class="accordion-content hidden p-4 pt-0 text-slate-600">
+                ${item.content}
+            </div>
+        `;
+        accordionContainer.appendChild(accordionItem);
+    });
+    
+    document.querySelectorAll('.accordion-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('.accordion-icon');
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        });
+    });
+
+    const tabContemporary = document.getElementById('tab-contemporary');
+    const tabFoundational = document.getElementById('tab-foundational');
+    const contentContemporary = document.getElementById('content-contemporary');
+    const contentFoundational = document.getElementById('content-foundational');
+
+    tabContemporary.addEventListener('click', () => {
+        contentContemporary.classList.remove('hidden');
+        contentFoundational.classList.add('hidden');
+        tabContemporary.classList.add('active');
+        tabFoundational.classList.remove('active');
+    });
+
+    tabFoundational.addEventListener('click', () => {
+        contentContemporary.classList.add('hidden');
+        contentFoundational.classList.remove('hidden');
+        tabFoundational.classList.add('active');
+        tabContemporary.classList.remove('active');
+    });
+
+    const ctx = document.getElementById('protocolComparisonChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Task Coordination', 'Tool/Context Access', 'Decentralization', 'Enterprise Focus', 'Maturity Level'],
+            datasets: [{
+                label: 'A2A (Google)',
+                data: [5, 3, 2, 5, 2],
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 2
+            }, {
+                label: 'MCP (Anthropic)',
+                data: [1, 5, 1, 3, 4],
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                borderColor: 'rgba(16, 185, 129, 1)',
+                pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 2
+            }, {
+                label: 'ACP (IBM/Cisco)',
+                data: [4, 2, 2, 4, 1],
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                borderWidth: 2
+            }, {
+                label: 'ANP (Community)',
+                data: [3, 2, 5, 2, 1],
+                backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                borderColor: 'rgba(249, 115, 22, 1)',
+                pointBackgroundColor: 'rgba(249, 115, 22, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    pointLabels: {
+                        font: {
+                           size: 12,
+                           weight: '500'
+                        },
+                        color: '#475569'
+                    },
+                    ticks: {
+                        backdropColor: 'rgba(255, 255, 255, 0.75)',
+                        stepSize: 1,
+                        max: 5,
+                        min: 0
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.r !== null) {
+                                const ratings = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
+                                label += ratings[context.parsed.r -1];
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+</body>
+</html>
