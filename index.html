@@ -74,21 +74,22 @@
             color: white;
         }
         .mcp-button {
-      padding: 40px 68px;
-      font-size: 16px;
-      background-color: #0d6efd;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      text-decoration: none;
-    }
+  padding: 12px 28px;
+  font-size: 16px;
+  background-color: #2563eb; /* Tailwind's blue-600 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.mcp-button:hover {
+  background-color: #1e40af; /* Tailwind's blue-800 */
+  transform: translateY(-2px);
+}
 
-    .mcp-button:hover {
-      background-color: #084298;
-        
-    }
     </style>
 </head>
 <body class="text-slate-700">
@@ -110,6 +111,12 @@
                         <a href="#comparison" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Comparison</a>
                         <a href="#future" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Future & Challenges</a>
                     </div>
+                    <div class="text-center mt-8">
+  <a href="Model-Context-Protocol-Orchestration.html" class="mcp-button inline-block">
+    Go to MCP Site
+  </a>
+</div>
+
                 </div>
                 <div class="md:hidden">
                     <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
